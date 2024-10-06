@@ -20,6 +20,5 @@ class SigPattern {
  private:
   void Parse(const char* str);
 
- private:
   size_t _patternLength;
 };

@@ -16,7 +16,7 @@
 SigScanner::SigScanner(const char *moduleName) {
   _hModule = GetModuleHandleA(moduleName);
 
-  if (_hModule == NULL) {
+  if (_hModule == nullptr) {
     printf("Module '%s' not found.", moduleName);
     throw std::runtime_error("Module not found");
   }
@@ -24,11 +24,11 @@ SigScanner::SigScanner(const char *moduleName) {
   GetTextSectionBytes(_hModule);
 }
 
-void *SigScanner::Scan(const char *szPattern) {
-  SigPattern pattern = szPattern;
+void *SigScanner::Scan(const char *szPattern) const {
+  const SigPattern pattern = szPattern;
 
   uint8_t *codeStart = _textSectionVA;
-  uint8_t *codeEnd = _textSectionVA + _textSectionSize;
+  const uint8_t *codeEnd = _textSectionVA + _textSectionSize;
 
   for (uint8_t *pAddress = codeStart; pAddress < codeEnd; pAddress++) {
     uint8_t module_byte = *pAddress;
@@ -43,7 +43,7 @@ void *SigScanner::Scan(const char *szPattern) {
       }
 
       for (size_t j = 1; j < pattern.Length(); j++) {
-        module_byte = *(uint8_t *)(pAddress + j);
+        module_byte = *(pAddress + j);
 
         // If anything doesn't match, restart
         if (!pattern.Match(module_byte, j)) {
@@ -61,12 +61,12 @@ void *SigScanner::Scan(const char *szPattern) {
   throw std::runtime_error("Couldn't find pattern " + std::string(szPattern));
 }
 
-PIMAGE_SECTION_HEADER GetPESection(HANDLE hModule, const char *sectionName) {
+PIMAGE_SECTION_HEADER GetPESection(const HANDLE hModule, const char *sectionName) {
   // get the location of the module's IMAGE_NT_HEADERS structure
   IMAGE_NT_HEADERS *pNtHdr = ImageNtHeader(hModule);
 
   // section table immediately follows the IMAGE_NT_HEADERS
-  IMAGE_SECTION_HEADER *pSectionHdr = (IMAGE_SECTION_HEADER *)(pNtHdr + 1);
+  auto pSectionHdr = reinterpret_cast<IMAGE_SECTION_HEADER*>(pNtHdr + 1);
 
   char scnName[sizeof(pSectionHdr->Name) + 1];
   scnName[sizeof(scnName) - 1] =
@@ -76,7 +76,7 @@ PIMAGE_SECTION_HEADER GetPESection(HANDLE hModule, const char *sectionName) {
     // Note: pSectionHdr->Name[] is 8 bytes long. If the scn name is 8 bytes long, ->Name[] will
     // not be nul-terminated. For this reason, copy it to a local buffer that's nul-terminated
     // to be sure we only print the real scn name, and no extra garbage beyond it.
-    strncpy_s(scnName, (const char *)pSectionHdr->Name, sizeof(pSectionHdr->Name));
+    strncpy_s(scnName, reinterpret_cast<const char*>(pSectionHdr->Name), sizeof(pSectionHdr->Name));
 
     if (!_strcmpi(scnName, sectionName)) {
       return pSectionHdr;
@@ -84,7 +84,7 @@ PIMAGE_SECTION_HEADER GetPESection(HANDLE hModule, const char *sectionName) {
     ++pSectionHdr;
   }
 
-  return FALSE;
+  return nullptr;
 }
 
 void SigScanner::GetTextSectionBytes(HMODULE hModule) {

@@ -15,9 +15,9 @@ size_t SigPattern::Length() const {
   return _patternLength;
 }
 
-bool SigPattern::Match(uint8_t byte, size_t pos) const {
-  bool bytesMatch = byte == Bytes[pos];
-  bool byteMustMatch = Mask[pos];
+bool SigPattern::Match(const uint8_t byte, const size_t pos) const {
+  const bool bytesMatch = byte == Bytes[pos];
+  const bool byteMustMatch = Mask[pos];
 
   return bytesMatch || byteMustMatch == false;
 }
@@ -26,7 +26,7 @@ void SigPattern::Parse(const char* szPattern) {
   std::string pattern = szPattern;
 
   // Remove all spaces
-  auto end_pos = std::remove(pattern.begin(), pattern.end(), ' ');
+  const auto end_pos = std::remove(pattern.begin(), pattern.end(), ' ');
   pattern.erase(end_pos, pattern.end());
 
   _patternLength = pattern.length() / 2;
@@ -45,7 +45,7 @@ void SigPattern::Parse(const char* szPattern) {
       Mask[pos] = false;
     } else {
       // Parse the exact value
-      auto val = static_cast<uint8_t>(strtol(hexStr.c_str(), NULL, 16));
+      const auto val = static_cast<uint8_t>(strtol(hexStr.c_str(), nullptr, 16));
 
       Bytes[pos] = val;
       Mask[pos] = true;
